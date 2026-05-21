@@ -1,0 +1,224 @@
+
+===============================================================================
+                       NUTANIX COMMUNITY EDITION GUIDE
+===============================================================================
+
+-------------------------------------------------------------------------------
+1. THE 4-STEP DOWNLOAD PROCESS
+-------------------------------------------------------------------------------
+
+[Step 1: Identity Verification (The Gatekeeper)]
+   * You must be logged into a Nutanix ID account. 
+   * If you aren't logged in, the link will either throw an error or 
+     redirect you to a generic page.
+   * TIP: Register at https://my.nutanix.com if you haven't already.
+
+[Step 2: Locating the Correct Thread]
+   * The discussion forum thread acts as the "official source." 
+   * You have to scroll through the first post to find the specific 
+     "Installer ISO" link. 
+   * Nutanix updates this thread with the latest version (currently 2.0 
+     or 2.1), so the download URL itself changes over time.
+   * URL: https://next.nutanix.com/discussion-forum-14/download-community-edition-38417
+
+[Step 3: The Browser-Only Download]
+   * This is an Authenticated Download. 
+   * Because the server checks for your login "cookie," you cannot simply 
+     copy-paste the link into Proxmox's "Download from URL" tool. 
+   * You must download the file directly to your personal computer's 
+     Downloads folder first.
+
+[Step 4: Verification (MD5 Checksum)]
+   * In that forum thread, Nutanix provides a long string of numbers and 
+     letters (the MD5 hash). 
+   * It is standard practice to check this after your download finishes 
+     to ensure the 5GB+ file wasn't corrupted during the transfer.
+
+
+-------------------------------------------------------------------------------
+2. PROXMOX VM CPU CONFIGURATION (Nested Virtualization)
+-------------------------------------------------------------------------------
+While setting up the VM, make sure to set the CPU type to "host" to enable 
+nested virtualization:
+
+   1. Select your Nutanix VM in the Proxmox sidebar.
+   2. Click the "Hardware" tab in the center panel.
+   3. Find the line labeled "Processors" and double-click it (or click Edit).
+   4. Find the "Type" dropdown menu.
+   5. Scroll to the very top and select "host".
+   6. Click OK.
+
+
+-------------------------------------------------------------------------------
+3. MINIMUM SYSTEM REQUIREMENTS
+-------------------------------------------------------------------------------
+   +-------------------------------------------------------------+
+   | Component          | Minimum Requirement                     |
+   +-------------------------------------------------------------+
+   | CPU                | 4 vCPUs                                 |
+   | RAM                | 20 GB RAM                               |
+   | Network            | 2x Network Adapters                     |
+   | Storage (3 HDDs)   | - Host Boot Disk : 30 GB                |
+   |                    | - CVM Boot Disk  : 200 GB               |
+   |                    | - Data Disk      : 200 GB               |
+   +-------------------------------------------------------------+
+
+
+-------------------------------------------------------------------------------
+4. DEFAULT CREDENTIALS Reference
+-------------------------------------------------------------------------------
+   * Default Installer/AHV Credentials:
+     - User     : root
+     - Password : nutanix/4u
+
+   * Default Prism Element (Web GUI) Credentials:
+     - User     : admin
+     - Password : nutanix/4u
+
+
+-------------------------------------------------------------------------------
+5. VERIFYING COMPONENT & CVM STATUS
+-------------------------------------------------------------------------------
+To check the Controller VM (CVM) status from the hypervisor layer, run:
+   virsh list --all
+
+SSH Access Breakdown:
+   * Nutanix AHV (Hypervisor)
+     - Command  : ssh root@10.20.30.72
+     - Password : nutanix/4u
+
+   * Nutanix Controller VM (CVM)
+     - Command  : ssh nutanix@10.20.30.73
+     - Password : nutanix/4u
+
+
+-------------------------------------------------------------------------------
+6. CREATING A SINGLE-NODE NUTANIX CLUSTER
+-------------------------------------------------------------------------------
+   1. Install AOS on the node.
+   2. Access the host terminal and check the CVM status using 'virsh list --all'.
+   3. Once the CVM starts pinging, log into the CVM via SSH to execute the 
+      cluster setup command.
+   4. Use the following credentials to SSH into the CVM:
+      - Username : nutanix
+      - Password : nutanix/4u
+   5. Execute the initialization command:
+      $ cluster -s <cvm-ip-address> create
+   6. Once the creation process finishes, verify the status by running:
+      $ cluster status
+   7. If the services are stopped (down state), start the cluster by running:
+      $ cluster start
+   8. Once started, access the Prism Web Console dashboard by navigating 
+      to the CVM IP address in your web browser.
+   9. Log in using the default Web UI credentials:
+      - Username : admin
+      - Password : nutanix/4u
+  10. The system will prompt you to change the default password immediately.
+      (Example: Support@123$#)
+  11. Log in with your new credentials.
+  12. You will be redirected to the main Cluster Dashboard.
+
+[Optional Maintenance]
+   * To manually change the default password for the CVM via CLI if needed:
+     $ sudo passwd <username>
+===============================================================================
+ 
+ ========================
+ 
+ ================================================================================
+          RUNBOOK: VM MIGRATION FROM NUTANIX AHV TO PROXMOX VE
+================================================================================
+
+--------------------------------------------------------------------------------
+PHASE 1: NUTANIX SOURCE DISCOVERY
+--------------------------------------------------------------------------------
+* Log into any Nutanix CVM via SSH.
+
+1. Get VM Details:
+   acli vm.get <vm-name> include_vmdisk_paths=true
+
+   Note down: 
+   - uuid (VM UUID)
+   - storage_vdisk_uuid
+   - vmdisk_nfs_path
+   - machine_type ("pc" = BIOS, "q35" = UEFI)
+
+2. Verify Disk & Container:
+   ncli vdisk ls vm-id=<vm-uuid>
+
+   CRITICAL: Use the VM UUID here, not the disk UUID. 
+   Note down the Container UUID and NFS File Name.
+
+
+--------------------------------------------------------------------------------
+PHASE 2: EXPORT DISK FROM NUTANIX
+--------------------------------------------------------------------------------
+
+Method A: Direct NFS (Preferred)
+--------------------------------
+qemu-img convert -p -f raw nfs://127.0.0.1/<container-name>/.acropolis/vmdisk/<disk-uuid> -O qcow2 ubuntu_export.qcow2
+
+
+Method B: CVM Local Filesystem (Fallback)
+-----------------------------------------
+cd /ntnx/dataservices/storage/containers/<container-name>/.acropolis/vmdisk/
+qemu-img convert -p -f raw <disk-uuid> -O qcow2 ~/ubuntu_export.qcow2
+
+
+--------------------------------------------------------------------------------
+PHASE 3: TRANSFER TO PROXMOX
+--------------------------------------------------------------------------------
+scp ubuntu_export.qcow2 root@<proxmox-ip>:/var/lib/vz/images/
+
+(Alternatively: Move via a shared NFS/SMB mount).
+
+
+--------------------------------------------------------------------------------
+PHASE 4: PROXMOX PROVISIONING
+--------------------------------------------------------------------------------
+* Log into Proxmox VE via SSH.
+
+1. Find an Available VM ID:
+   qm list
+
+2. Create the VM Shell:
+   qm create 126 --name ubuntu --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
+
+3. Import the Disk:
+   qm importdisk 126 /var/lib/vz/images/ubuntu_export.qcow2 local-lvm
+
+   (Target volume will be created as local-lvm:vm-126-disk-0)
+
+
+--------------------------------------------------------------------------------
+PHASE 5: HARDWARE ALIGNMENT
+--------------------------------------------------------------------------------
+
+1. Attach Controller & Disk:
+   qm set 126 --scsihw virtio-scsi-pci
+   qm set 126 --scsi0 local-lvm:vm-126-disk-0
+
+2. Configure Boot Mode (Depending on Phase 1 finding):
+
+   [IF ORIGINAL VM WAS UEFI]
+   qm set 126 --machine q35 --bios ovmf
+   qm set 126 --efidisk0 local-lvm:1,format=raw
+
+   [IF ORIGINAL VM WAS LEGACY BIOS]
+   (Skip this step entirely. Proxmox defaults to SeaBIOS).
+
+3. Set Boot Priority:
+   qm set 126 --boot order=scsi0
+
+
+--------------------------------------------------------------------------------
+PHASE 6: CLEANUP
+--------------------------------------------------------------------------------
+1. Start the VM via the Proxmox Web UI and verify it boots.
+2. Delete the temporary migration file to reclaim space:
+   rm /var/lib/vz/images/ubuntu_export.qcow2
+
+================================================================================
+
+=========
+
