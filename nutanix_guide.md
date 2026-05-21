@@ -4,38 +4,38 @@
 
 ## 1. THE 4-STEP DOWNLOAD PROCESS
 
-### [Step 1: Identity Verification (The Gatekeeper)]
-* [cite_start]You must be logged into a Nutanix ID account[cite: 1].
-* [cite_start]If you aren't logged in, the link will either throw an error or redirect you to a generic page[cite: 2].
-* [cite_start]**TIP:** Register at https://my.nutanix.com if you haven't already[cite: 3].
+### Step 1: Identity Verification (The Gatekeeper)
+* You must be logged into a Nutanix ID account.
+* If you aren't logged in, the link will either throw an error or redirect you to a generic page.
+* **TIP:** Register at https://my.nutanix.com if you haven't already.
 
-### [Step 2: Locating the Correct Thread]
-* [cite_start]The discussion forum thread acts as the "official source." [cite: 4]
-* [cite_start]You have to scroll through the first post to find the specific "Installer ISO" link[cite: 4].
-* [cite_start]Nutanix updates this thread with the latest version (currently 2.0 or 2.1), so the download URL itself changes over time[cite: 5].
-* [cite_start]**URL:** https://next.nutanix.com/discussion-forum-14/download-community-edition-38417 [cite: 6]
+### Step 2: Locating the Correct Thread
+* The discussion forum thread acts as the "official source."
+* You have to scroll through the first post to find the specific "Installer ISO" link.
+* Nutanix updates this thread with the latest version (currently 2.0 or 2.1), so the download URL itself changes over time.
+* **URL:** https://next.nutanix.com/discussion-forum-14/download-community-edition-38417
 
-### [Step 3: The Browser-Only Download]
-* [cite_start]This is an Authenticated Download[cite: 7].
-* [cite_start]Because the server checks for your login "cookie," you cannot simply copy-paste the link into Proxmox's "Download from URL" tool[cite: 7].
-* [cite_start]You must download the file directly to your personal computer's Downloads folder first[cite: 8].
+### Step 3: The Browser-Only Download
+* This is an Authenticated Download.
+* Because the server checks for your login "cookie," you cannot simply copy-paste the link into Proxmox's "Download from URL" tool.
+* You must download the file directly to your personal computer's Downloads folder first.
 
-### [Step 4: Verification (MD5 Checksum)]
-* [cite_start]In that forum thread, Nutanix provides a long string of numbers and letters (the MD5 hash)[cite: 9].
-* [cite_start]It is standard practice to check this after your download finishes to ensure the 5GB+ file wasn't corrupted during the transfer[cite: 10].
+### Step 4: Verification (MD5 Checksum)
+* In that forum thread, Nutanix provides a long string of numbers and letters (the MD5 hash).
+* It is standard practice to check this after your download finishes to ensure the 5GB+ file wasn't corrupted during the transfer.
 
 ---
 
 ## 2. PROXMOX VM CPU CONFIGURATION (Nested Virtualization)
 
-[cite_start]While setting up the VM, make sure to set the CPU type to "host" to enable nested virtualization[cite: 11]:
+While setting up the VM, make sure to set the CPU type to "host" to enable nested virtualization:
 
-1. [cite_start]Select your Nutanix VM in the Proxmox sidebar[cite: 11].
-2. [cite_start]Click the "Hardware" tab in the center panel[cite: 12].
-3. [cite_start]Find the line labeled "Processors" and double-click it (or click Edit)[cite: 12].
-4. [cite_start]Find the "Type" dropdown menu[cite: 13].
-5. [cite_start]Scroll to the very top and select "host"[cite: 13].
-6. [cite_start]Click OK[cite: 13].
+1. Select your Nutanix VM in the Proxmox sidebar.
+2. Click the **Hardware** tab in the center panel.
+3. Find the line labeled "Processors" and double-click it (or click Edit).
+4. Find the **Type** dropdown menu.
+5. Scroll to the very top and select **host**.
+6. Click **OK**.
 
 ---
 
@@ -43,21 +43,11 @@
 
 | Component | Minimum Requirement |
 | :--- | :--- |
-| [cite_start]**CPU** [cite: 15] | [cite_start]4 vCPUs [cite: 18] |
-| [cite_start]**RAM** [cite: 19] | [cite_start]20 GB RAM [cite: 20] |
-| [cite_start]**Network** [cite: 21] | [cite_start]2x Network Adapters [cite: 22] |
-| [cite_start]**Storage (3 HDDs)** [cite: 23] | - [cite_start]Host Boot Disk : 30 GB [cite: 23][cite_start]<br>- CVM Boot Disk  : 200 GB [cite: 24][cite_start]<br>- Data Disk      : 200 GB [cite: 25] |
+| **CPU** | 4 vCPUs |
+| **RAM** | 20 GB RAM |
+| **Network** | 2x Network Adapters |
+| **Storage (3 HDDs)** | - Host Boot Disk: 30 GB <br> - CVM Boot Disk: 200 GB <br> - Data Disk: 200 GB |
 
-+--------------------+--------------------------------------------------+
-   | Component          | Minimum Requirement                              |
-   +--------------------+--------------------------------------------------+
-   | CPU                | 4 vCPUs                                          |
-   | RAM                | 20 GB RAM                                        |
-   | Network            | 2x Network Adapters                              |
-   | Storage (3 HDDs)   | - Host Boot Disk : 30 GB                         |
-   |                    | - CVM Boot Disk  : 200 GB                        |
-   |                    | - Data Disk      : 200 GB                        |
-   +--------------------+--------------------------------------------------+
 ---
 
 ## 4. DEFAULT CREDENTIALS Reference
