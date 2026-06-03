@@ -1,0 +1,133 @@
+# Installing  Proxmox Datacenter Manager (PDM) Installation
+
+Either install the the PDM iso or install the package in PVE for co-hosting on port 8443.
+
+
+This section fixes GPG key/signing errors and installs the Datacenter Manager onto your existing host. Since this is an existing PVE system, your host already trusts the official Proxmox archive key, so there is no need to manually pull a separate GPG key via curl.
+
+### Step 1: Update the Repository List File
+Log in to your Proxmox VE host CLI shell and overwrite your PDM configuration file. This points directly to your host's pre-installed, trusted archive keyring:
+
+
+cat <<EOF > /etc/apt/sources.list.d/proxmox-pdm.list
+# Proxmox Datacenter Manager repository for Debian Trixie
+deb [signed-by=/usr/share/keyrings/proxmox-archive-keyring.gpg] [http://download.proxmox.com/debian/pdm](http://download.proxmox.com/debian/pdm) trixie pdm-no-subscription
+EOF
+
+
+
+### Step 2: Clear Package Cache and Update
+Clear out any corrupted or half-downloaded metadata caches and fetch the package definitions from the newly added PDM repository:
+
+
+apt clean
+apt update
+
+### Step 3: Install PDM and the Web UI Component
+Execute the installation. The package manager will now successfully authenticate the application against your host's trusted keys without throwing signature flags:
+
+
+apt install proxmox-datacenter-manager proxmox-datacenter-manager-ui -y
+
+
+
+
+
+
+
+
+
+# Proxmox VE (PVE) Web GUI Guide: Isolating Developers to Individual VMs
+
+This step-by-step guide walks you through configuring developer isolation directly within the Proxmox VE web interface, replacing the equivalent CLI commands.
+
+---
+
+## Step 1 — Create a Custom Developer Role
+Instead of using the command line, you can visually build this role with the exact permissions developers need to manage their environments without affecting node-level configurations.
+
+1. In the left-hand resource tree, click on **Datacenter**.
+2. Select **Permissions** from the middle menu, then click on **Roles**.
+3. Click the **Create** button at the top.
+4. Name the role: `Developer`.
+5. Check the boxes next to the following exact privileges:
+   * **VM.Allocate**, **VM.Clone**
+   * **VM.Config.CDROM**, **VM.Config.CPU**, **VM.Config.Cloudinit**, **VM.Config.Disk**, **VM.Config.Memory**, **VM.Config.Network**
+   * **VM.Console**, **VM.Migrate**, **VM.Monitor**, **VM.PowerMgmt**
+   * **VM.Snapshot**, **VM.Snapshot.Rollback**
+   * **Datastore.AllocateSpace**
+6. Click **Create**.
+
+> **Security Warning:** Do not include `Sys.*`, `Node.*`, or `Permissions.Modify` privileges. These allow cluster-wide management and are outside a developer's scope.
+
+---
+
+## Step 2 — Create a Resource Pool per Developer
+Resource pools act as logical administrative boundaries. When permissions are applied to a pool, any VM placed inside inherits those rules.
+
+1. Stay under **Datacenter** in the main view.
+2. Click on **Resource Pools** in the menu.
+3. Click **Create**.
+4. Configure the first pool:
+   * **Pool ID:** `alice-vms`
+   * **Comment:** `Alice's dev VMs`
+5. Click **Create**.
+6. Repeat this process to create pools for `bob-vms` and `carol-vms`.
+
+---
+
+## Step 3 — Create User Accounts
+If you aren't linking Proxmox to an external directory server, create local PVE authentication accounts.
+
+1. Navigate to **Datacenter** → **Permissions** → **Users**.
+2. Click **Add**.
+3. Fill out the user details:
+   * **User name:** `alice`
+   * **Realm:** `pve` *(Proxmox VE authentication)*
+   * **Password:** *Enter a secure password*
+   * **Comment:** `Developer Alice`
+4. Click **Add**.
+5. Repeat the exact same process to create accounts for `bob` and `carol`.
+
+>  **Active Directory / LDAP Integration:** If you prefer syncing your enterprise directory server instead of creating local accounts, navigate to **Datacenter** → **Permissions** → **Authentication**, click **Add**, choose **LDAP** or **Active Directory**, and populate your domain settings.
+
+---
+
+## Step 4 — Assign the Developer Role to the Pools (ACLs)
+This step ties your custom role, users, and resource pools together using an Access Control List (ACL).
+
+1. Go to **Datacenter** → **Permissions**.
+2. Click **Add** and select **User Permission** from the dropdown menu.
+3. Configure the ACL rule for the first developer:
+   * **Path:** Expand the dropdown and select `/pool/alice-vms`
+   * **User:** Select `alice@pve`
+   * **Role:** Select your custom `Developer` role
+   * **Propagate:** *Ensure this box is checked* (allows newly added VMs inside the pool to automatically inherit these rights)
+4. Click **Add**.
+5. Repeat this configuration for the remaining developers:
+   * Path: `/pool/bob-vms` → User: `bob@pve` → Role: `Developer`
+   * Path: `/pool/carol-vms` → User: `carol@pve` → Role: `Developer`
+
+---
+
+## Step 5 — Move VMs into the Correct Pool
+To restrict existing VMs to their designated developers, you must assign them to their corresponding pools.
+
+
+1. Select the specific VM from the left-hand resource tree.
+2. Go to its **Options** tab.
+3. Double-click **Pool**.
+4. Select `alice-vms` from the dropdown list and click **OK**.
+
+>  **Best Practice for New VMs:** When developers build new virtual machines using the **Create VM** wizard, they must manually select their own pool (e.g., `alice-vms`) in the **Pool** dropdown field on the first (**General**) tab. If left blank, they will lose administrative access to the VM once it's created.
+
+---
+
+## Step 6 — Verify Isolation
+1. Open an Incognito/Private browser tab or log out of your administrative account.
+2. Log into the PVE web UI using `alice@pve` and her corresponding password.
+
+### Success Criteria:
+* Alice will only see her dedicated resource pool (`alice-vms`) and her assigned VMs in the sidebar.
+* Bob's and Carol's infrastructure remains completely invisible to her.
+* She can successfully power cycle, clone, configure hardware, and snapshot her own VMs, but cannot view or modify global node resources.
