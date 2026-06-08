@@ -44,7 +44,7 @@ This guide demonstrates how to configure developer isolation entirely through th
 
 ---
 
-![Create role] (images/PVE_role.png)
+![Create role](images/PVE_role.png)
 
 ## Step 1 — Create a Custom Developer Role
 
@@ -108,7 +108,7 @@ Resource pools provide logical boundaries for delegated administration.
    - `carol-vms`
 
 ---
-![Create user] (images/PVE_user.png)
+![Create user](images/PVE_user.png)
 
 ## Step 3 — Create Developer User Accounts
 
@@ -249,7 +249,7 @@ After the token has been created and assigned:
 7. Click **Add**.
 8. If prompted about a self-signed SSL certificate, review the fingerprint and click **Accept**.
 
-![Create role] (images/PDM_fullview.png)
+![Create role](images/PDM_fullview.png)
 
 
 ## Phase 2 — Create Users in PDM
@@ -274,7 +274,7 @@ Next, create the users who will access the PDM interface.
 Repeat this process for any additional users.
 
 ---
-![Create role] (images/PDM_fullview.png)
+![Create role](images/PDM_fullview.png)
 
 ## Phase 3 — Configure Targeted Access Control
 
@@ -377,7 +377,7 @@ or
 Without propagation enabled, users may see incomplete resource trees or lose access to nested objects.
 
 ---
-![Create role] (images/PDM_test.png)
+![Create role](images/PDM_test.png)
 ## Phase 4 — Verify Access Restrictions
 
 1. Log out of the PDM administrator account:
